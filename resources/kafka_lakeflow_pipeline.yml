@@ -1,0 +1,32 @@
+resources:
+  pipelines:
+    kafka_lakeflow_bpm:
+      name: "[${bundle.target}] kafka-lakeflow-bpm-pipeline"
+
+      # Unity Catalog target
+      catalog: na-dbxtraining
+      schema:  biju_lakeflowschema
+
+      # Serverless + Photon for cost-efficient streaming
+      serverless: true
+      photon:     true
+      channel:    CURRENT
+
+      # Triggered (false) — run on schedule or manually.
+      # Set to true for near-real-time continuous mode.
+      continuous: false
+
+      # Source notebooks glob — order of execution follows file name prefix
+      libraries:
+        - glob:
+            include: ${workspace.file_path}/src/**
+
+      # Kafka connection parameters injected as pipeline config.
+      # Secrets should be moved to Databricks Secrets in production.
+      configuration:
+        kafka.bootstrap.servers: yourserver.confluent.cloud:9092
+        kafka.api.key:           yourkey
+        kafka.api.secret:        "yoursecret"
+        # Comma-separated list for Spark Kafka source "subscribe"
+        kafka.topic:             orders.created,orders.updated,payments.authorized
+        simulation.num_events:   "50"

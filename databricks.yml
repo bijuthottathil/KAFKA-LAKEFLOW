@@ -1,0 +1,20 @@
+bundle:
+  name: kafka-lakeflow-bpm
+
+workspace:
+  host:    https://adb-1952652121322753.13.azuredatabricks.net
+  profile: biju
+  root_path: ~/training/v2-training/kafka-lakeflow
+
+include:
+  - resources/*.yml
+
+targets:
+  dev:
+    mode:    development
+    default: true
+
+  prod:
+    mode: production
+    workspace:
+      root_path: ~/training/v2-training/kafka-lakeflow
