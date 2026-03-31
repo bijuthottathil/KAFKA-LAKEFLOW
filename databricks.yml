@@ -1,3 +1,4 @@
+# Deploy: see README.md (databricks bundle deploy + DATABRICKS_BUNDLE_ENGINE=direct)
 bundle:
   name: kafka-lakeflow-bpm
 

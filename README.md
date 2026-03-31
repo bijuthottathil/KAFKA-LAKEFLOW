@@ -73,6 +73,7 @@ The bundle file `databricks.yml` tells the Databricks CLI **which workspace to u
 | Setting | What to change |
 |--------|----------------|
 | `bundle.name` | Logical name for this bundle (shown in CLI output). Use something unique if you run many projects, e.g. `kafka-lakeflow-acme`. |
+| Deploy | Set **`DATABRICKS_BUNDLE_ENGINE=direct`** and run **`databricks bundle deploy`** (commands are in **Deploying to Databricks** below). See [Direct deployment](https://docs.databricks.com/aws/en/dev-tools/bundles/direct). |
 | `workspace.host` | Your workspace URL (Azure, AWS, or GCP). Copy it from the browser when you are logged into Databricks (must match the workspace you intend to deploy to). |
 | `workspace.profile` | Name of a profile in `~/.databrickscfg` (or your platform’s credential store). The CLI uses this profile for `bundle deploy`, `bundle summary`, etc. Create or pick a profile with [`databricks auth login`](https://docs.databricks.com/dev-tools/cli/authentication.html) for that host. |
 | `workspace.root_path` | **Workspace folder** where bundle files are synced (under `/Workspace/Users/<user>/...` when you use `~`). Choose a path you own and that matches your team’s naming convention. This path appears in the pipeline’s `libraries` include via `${workspace.file_path}` in `resources/kafka_lakeflow_pipeline.yml`. |
@@ -86,7 +87,7 @@ The bundle file `databricks.yml` tells the Databricks CLI **which workspace to u
 1. Copy `databricks.yml` and edit the table fields above for your user or team.
 2. Run `databricks bundle validate -t <target>` to catch syntax and resolution errors.
 3. Run `databricks bundle summary -t <target>` and confirm **Host**, **User**, and **Path** match expectations.
-4. Deploy with `databricks bundle deploy -t <target>`.
+4. Deploy with `DATABRICKS_BUNDLE_ENGINE=direct databricks bundle deploy -t <target>` (see **Deploying to Databricks**).
 
 **Note:** Pipeline-specific settings (Kafka, Unity Catalog catalog/schema, serverless) live in `resources/kafka_lakeflow_pipeline.yml`, not in `databricks.yml`. See the next section for Kafka configuration.
 
@@ -132,18 +133,41 @@ Run the simulator **before** or **between** pipeline runs if you need fresh data
 
 Prerequisites:
 
-- [Databricks CLI](https://docs.databricks.com/dev-tools/cli/index.html) installed and authenticated (this project uses a CLI **profile**, e.g. `biju`, in `databricks.yml`).
+- [Databricks CLI](https://docs.databricks.com/dev-tools/cli/index.html) **0.279.0 or newer** (direct deployment engine).
+- CLI authenticated (this project uses a **profile**, e.g. `biju`, in `databricks.yml`).
 - Permissions to deploy bundles and update pipelines in the target workspace.
 
-From the project root:
+### Deployment (direct engine)
+
+Deploys use the **direct** engine ([docs](https://docs.databricks.com/aws/en/dev-tools/bundles/direct)). Local metadata lives under **`.databricks/bundle/<target>/`** (gitignored), including **`resources.json`**.
+
+Run everything **from the project root** (the folder that contains `databricks.yml`). Replace `dev` with another target name if you use `prod`, etc.
+
+Set **`DATABRICKS_BUNDLE_ENGINE=direct`** on each `bundle deploy` / `bundle plan` (prefix on the same line, or `export` once per shell). Replace **`dev`** with your target if different.
+
+**1. Routine deploy (validate → deploy → summary)**
 
 ```bash
-databricks bundle deploy -t dev
+databricks bundle validate -t dev
+DATABRICKS_BUNDLE_ENGINE=direct databricks bundle deploy -t dev
+databricks bundle summary -t dev
 ```
 
-This uploads bundle files under the workspace path derived from `root_path` in `databricks.yml` (for example `training/v2-training/kafka-lakeflow/files`) and applies pipeline resource updates.
+**Dry run (plan only):**
 
-Use `databricks bundle summary -t dev` to confirm the target workspace, user, and pipeline URL.
+```bash
+DATABRICKS_BUNDLE_ENGINE=direct databricks bundle plan -t dev
+```
+
+**2. Clear local bundle cache, then deploy** (use when you see errors such as *Required engine "direct" does not match present state files* — run **in this order** from the project root):
+
+```bash
+rm -rf .databricks/bundle/dev
+DATABRICKS_BUNDLE_ENGINE=direct databricks bundle deploy -t dev
+databricks bundle summary -t dev
+```
+
+On Windows, delete the folder `.databricks\bundle\dev` in Explorer or use your shell’s equivalent instead of `rm -rf`.
 
 ---
 

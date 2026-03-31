@@ -63,7 +63,7 @@ flowchart LR
 
 - **Confluent Cloud** cluster and API key with access to your topics  
 - **Databricks** workspace with **Unity Catalog**, **DLT**, and permission to run **serverless** pipelines (as configured in the project)  
-- **Databricks CLI** for deployment (`databricks bundle deploy`)  
+- **Databricks CLI** (≥ 0.279.0) — deploy with **`DATABRICKS_BUNDLE_ENGINE=direct`** and **`databricks bundle deploy`** (direct deployment engine)  
 - Familiarity with **PySpark** and the **medallion** idea helps but isn’t mandatory  
 
 Store **secrets** in **Databricks Secrets** or your CI secret store for anything beyond a personal sandbox—never treat API keys as permanent documentation.
@@ -92,7 +92,16 @@ After configuring your workspace profile and `root_path` in `databricks.yml`:
 
 ```bash
 databricks bundle validate -t dev
-databricks bundle deploy -t dev
+DATABRICKS_BUNDLE_ENGINE=direct databricks bundle deploy -t dev
+databricks bundle summary -t dev
+```
+
+If local bundle cache causes deploy errors, run **in order** (from the repo root; adjust `dev` if needed):
+
+```bash
+rm -rf .databricks/bundle/dev
+DATABRICKS_BUNDLE_ENGINE=direct databricks bundle deploy -t dev
+databricks bundle summary -t dev
 ```
 
 That syncs sources and updates the pipeline definition. Run the pipeline from the Databricks UI, or trigger it on a schedule once you’re happy with cost and latency.
