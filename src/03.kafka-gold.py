@@ -1,6 +1,5 @@
 from pyspark import pipelines as dp
 from pyspark.sql import functions as F
-from pyspark.sql.window import Window
 
 # -----------------------------------------
 # GOLD LAYER — Order / payment analytics
@@ -51,19 +50,27 @@ def gold_event_counts_by_type():
     )
 
 
-@dp.materialized_view(
-    name="gold_latest_order_status",
-    comment="Most recent status update per order (from order.updated)",
-)
-def gold_latest_order_status():
-    w = Window.partitionBy("order_id").orderBy(F.col("event_time").desc())
+# -----------------------------------------
+# SCD Type 2 — Order status history
+#
+# Tracks full history of order status changes.
+# Each row gets __START_AT / __END_AT columns
+# managed automatically by create_auto_cdc_flow.
+# Active records have __END_AT = NULL.
+#
+# _seq (struct<event_time, offset>) is a composite
+# sequence column: event_time is the primary sort,
+# Kafka offset breaks ties when multiple events
+# share the same millisecond timestamp.
+# -----------------------------------------
 
+
+@dp.view(name="v_order_status_updates")
+def v_order_status_updates():
+    """Intermediate streaming view: only order.updated events."""
     return (
-        spark.read.table("silver_order_events")
+        spark.readStream.table("silver_order_events")
         .filter(F.col("event_type") == "order.updated")
-        .withColumn("rn", F.row_number().over(w))
-        .filter(F.col("rn") == 1)
-        .drop("rn")
         .select(
             "order_id",
             "new_status",
@@ -71,5 +78,24 @@ def gold_latest_order_status():
             "topic",
             "partition",
             "offset",
+            F.struct(F.col("event_time"), F.col("offset")).alias("_seq"),
         )
     )
+
+
+dp.create_streaming_table(
+    name="gold_order_status_history",
+    comment="SCD Type 2 history of order status changes (from order.updated)",
+    table_properties={
+        "delta.enableChangeDataFeed": "true",
+    },
+)
+
+dp.create_auto_cdc_flow(
+    target="gold_order_status_history",
+    source="v_order_status_updates",
+    keys=["order_id"],
+    sequence_by=F.col("_seq"),
+    except_column_list=["_seq"],
+    stored_as_scd_type="2",
+)

@@ -97,17 +97,17 @@ print(
 try:
     kafka_bootstrap = spark.conf.get("kafka.bootstrap.servers")
 except Exception:
-    kafka_bootstrap = "your.confluent.cloud:9092"
+    kafka_bootstrap = "yourserver.confluent.cloud:9092"
 
 try:
     kafka_api_key = spark.conf.get("kafka.api.key")
 except Exception:
-    kafka_api_key = "XDNCGI37HYWXKQ43"
+    kafka_api_key = "yourkey"
 
 try:
     kafka_api_secret = spark.conf.get("kafka.api.secret")
 except Exception:
-    kafka_api_secret = "your-api-secret"
+    kafka_api_secret = "yoursecret"
 
 jaas_config = (
     "kafkashaded.org.apache.kafka.common.security.plain.PlainLoginModule"

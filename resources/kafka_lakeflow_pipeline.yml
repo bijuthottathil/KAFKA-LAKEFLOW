@@ -1,7 +1,7 @@
 resources:
   pipelines:
-    kafka_lakeflow_bpm:
-      name: "[${bundle.target}] kafka-lakeflow-bpm-pipeline"
+    kafka_lakeflow_order:
+      name: "[${bundle.target}] kafka-lakeflow-order-pipeline"
 
       # Unity Catalog target
       catalog: na-dbxtraining
@@ -24,9 +24,9 @@ resources:
       # Kafka connection parameters injected as pipeline config.
       # Secrets should be moved to Databricks Secrets in production.
       configuration:
-        kafka.bootstrap.servers: yourserver.confluent.cloud:9092
-        kafka.api.key:           yourkey
-        kafka.api.secret:        "yoursecret"
+        kafka.bootstrap.servers: pkc-921jm.us-east-2.aws.confluent.cloud:9092
+        kafka.api.key:           UL6YKBFNBH2JTCSI
+        kafka.api.secret:        "cfltQeJn9LPifhH0VIthd38Y4WNfEZ2EHwXQTTI2QC934i1JDZY3B7XV31ks5VCw"
         # Comma-separated list for Spark Kafka source "subscribe"
         kafka.topic:             orders.created,orders.updated,payments.authorized
         simulation.num_events:   "50"

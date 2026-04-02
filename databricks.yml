@@ -1,6 +1,6 @@
 # Deploy: see README.md (databricks bundle deploy + DATABRICKS_BUNDLE_ENGINE=direct)
 bundle:
-  name: kafka-lakeflow-bpm
+  name: kafka-lakeflow-orders
 
 workspace:
   host:    https://adb-1952652121322753.13.azuredatabricks.net
